@@ -1,5 +1,5 @@
 ---
-title: "Pubpol 543 Final"
+title: "Pubpol 543 Final Part 3:VISUAL"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -14,12 +14,9 @@ Column {.tabset}
 ### U.S. States with Racial and Ethnic Population Greater than 500K
 
 ```{r, fig.width=8, fig.height=5}
-#readRDS("hypData.rds")
-
-library(leaflet)
-library(manipulateWidget)
 
 readRDS("hypData.rds")
+
 ```
 
 ### The Most Expensive Places to Buy a Home in the U.S. by Region
