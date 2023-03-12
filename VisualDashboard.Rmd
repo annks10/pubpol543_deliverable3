@@ -1,0 +1,35 @@
+---
+title: "Pubpol 543 Final"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+```
+Column {.tabset}
+-----------------------------------------------------------------------
+### U.S. States with Racial and Ethnic Population Greater than 500K
+
+```{r, fig.width=8, fig.height=5}
+#readRDS("hypData.rds")
+
+library(leaflet)
+library(manipulateWidget)
+
+readRDS("hypData.rds")
+```
+
+### The Most Expensive Places to Buy a Home in the U.S. by Region
+
+```{r, fig.width=8, fig.height=5}
+readRDS("cost_regions.rds")
+```
+
+### Racial & Ethnic Composition of King County in 2020 Visualization Graph
+
+```{r, fig.width=8, fig.height=5}
+readRDS("kc_full_long.rds")
+```

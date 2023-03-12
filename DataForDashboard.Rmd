@@ -1,0 +1,209 @@
+---
+title: "Pubpol 543 part1"
+author: "Ann S"
+date: "2023-03-08"
+output: html_document
+---
+
+```{r dataPrep-KingCountCSV_FullList}
+#clear workspace
+rm(list = ls())
+
+#libraries
+library(scales)
+library(dplyr)
+
+#retrieve data
+kc_full= read.csv("https://github.com/annks10/repo2/raw/main/KingCountyCSV_FullList.csv", stringsAsFactors = FALSE)
+
+#removing the first column X
+kc_full=kc_full[,-1,]
+
+#converting the label rows into columns 
+kc_full_wide= as.data.frame(t(kc_full))
+row.names(kc_full_wide)=NULL
+
+#removing unwanted columns 
+kc_full_wide=kc_full_wide[,-c(2,9,11:25,27:46,48:62,64:69,70:71)]
+colnames(kc_full_wide)=NULL
+
+#removing header from df
+colnames(kc_full_wide)=kc_full_wide[c(1),]
+
+#removing the first row
+kc_full_wide=kc_full_wide[-1,]
+
+#reset index
+row.names(kc_full_wide)=NULL
+
+#create a new column called label and population size to melt 
+kc_full_wide$Label="Population"
+colnames(kc_full_wide)
+kc_full_long=reshape2::melt(kc_full_wide, c("Total:","Label"))
+
+#set seed
+set.seed(23)
+
+#Syntax to drop columns using %in% operator
+kc_full_long=kc_full_long[ , !names(kc_full_long) %in% 
+    c("Total:","Label")]
+
+#Add row using rbind()
+new_row = data.frame(variable = "Hispanic or Latino", value = "218,763")
+kc_full_long =  rbind( kc_full_long[1:2,], new_row, kc_full_long[-(1:2),] )
+row.names(kc_full_long)=NULL
+
+kc_full_long$value=gsub(",","",kc_full_long$value,fixed = T)
+kc_full_long$percent=as.numeric(kc_full_long$value)
+kc_full_long$value=as.numeric(kc_full_long$value)
+
+kc_full_long$percent=(kc_full_long$percent/sum(kc_full_long$percent)*100)
+kc_full_long$percent=format(round(kc_full_long$percent,2),nsmall = 2)
+kc_full_long$percent=as.numeric(kc_full_long$percent)
+```
+
+PLOT
+```{r plot kc_full_long}
+rm(list=ls())
+
+kc_full_long= read.csv("https://github.com/annks10/pubpol543_deliverable3/raw/main/kc_full_long.csv", stringsAsFactors = FALSE)
+
+kc_full_long$percent=(kc_full_long$percent/sum(kc_full_long$percent)*100)
+kc_full_long$percent=format(round(kc_full_long$percent,2),nsmall = 2)
+kc_full_long$percent=as.numeric(kc_full_long$percent)
+str(kc_full_long)
+
+titleText="Racial & Ethnic Composition of King County"
+sourceText="Source: US Census Bureau (2021)"
+#LABEL=paste0(round(kc_full_long$percent,2),"%")
+
+kc_full_long$variable= factor(kc_full_long$variable, levels = kc_full_long$variable[order(kc_full_long$percent, decreasing = FALSE)])
+
+library(ggplot2)
+library(scales)
+
+base=ggplot(data=kc_full_long,
+            aes(x=variable, y=percent))
+plot1=base+geom_segment( aes(xend=variable, yend=0)) 
+plot2=plot1+geom_point( size=4, color="orange") +
+  labs(title=titleText,
+       x=NULL,
+       y=NULL,
+       caption = sourceText)
+plot3=plot2+scale_y_continuous(breaks=c(0,10,20,30,40,50,60),
+                     limits=c(0,60),
+                     labels = unit_format(suffix = ""))
+plot4=plot3+coord_flip()
+plot5=plot4+theme_bw() 
+plot6=plot5+theme(plot.caption=element_text(hjust=0),
+                  plot.title=element_text(hjust=0.4))
+
+plot7=plot6+geom_text(hjust=0,
+                      size=3,
+                      aes(y=percent,
+                          label=paste0(round(percent,2),"%")))#+coord_flip()
+kc_full_long=plot7
+kc_full_long
+```
+SAVE
+```{r}
+#write.csv(kc_full_long,"kc_full_long.csv")
+saveRDS(kc_full_long, file = "kc_full_long.rds")
+```
+
+SECOND PLOT
+
+```{r dataPrep costs_regions}
+rm(list=ls())
+library(rio)
+costs_regions= read.csv("https://github.com/annks10/repo1/raw/main/costs_regions.csv", stringsAsFactors = FALSE)
+selec=c("Region","Division","MedianHomePrice","MedianEarnings","AverageEarnings","PovertyRate","Population","PopulationUnderPovertyLine")
+costs_regions1=costs_regions[,selec]
+costs_regions1_reorder=costs_regions1[order(costs_regions1$MedianHomePrice, decreasing = TRUE), ]
+row.names(costs_regions1_reorder)=NULL
+
+##remove dollar signs and commas from individual columns
+costs_regions1_reorder$MedianHomePrice = as.numeric(gsub("[\\$,]", "", costs_regions1_reorder$MedianHomePrice))
+costs_regions1_reorder$MedianEarnings = as.numeric(gsub("[\\$,]", "", costs_regions1_reorder$MedianEarnings))
+costs_regions1_reorder$AverageEarnings = as.numeric(gsub("[\\$,]", "", costs_regions1_reorder$AverageEarnings))
+costs_regions1_reorder$PovertyRate=as.numeric(gsub("[\\%,]", "", costs_regions1_reorder$PovertyRate))
+str(costs_regions1_reorder)
+set.seed(10)
+```
+PLOT 
+```{r}
+library(ggplot2)
+library(scales)
+
+base=ggplot(data=costs_regions1_reorder,
+            aes(x=reorder(Region, -MedianHomePrice),
+                y=MedianHomePrice,
+                fill=Division))+theme_minimal()
+base
+plot1=base+geom_bar(stat = "identity",
+                    position="dodge")
+plot1
+plot2=plot1+ labs(x = "Region",
+       y = "Median home price (000s)",
+       title = "The most expensive places to buy a home in the US in 2020",
+       caption = "Data source: Wikipedia") 
+plot3=plot2+theme_bw() 
+cost_regions=plot3+scale_y_continuous(labels = label_number(suffix = "K", scale = 1e-5)) 
+
+cost_regions
+```
+SAVE
+```{r save as rds}
+write.csv(cost_regions,"cost_regions.csv")
+saveRDS(cost_regions, file = "cost_regions.rds")
+
+```
+THIRD PLOT
+```{r dataPrep hypdata}
+rm(list = ls())
+library(rio)
+hypdata= read.csv("https://github.com/allisgoodrn/guided1/raw/main/complete1.csv", stringsAsFactors = FALSE)
+selec=c("State.Code" ,"Region","Cost_Index","Indigenous","European","Latinx","African","Asian")
+hypdata1=hypdata[,selec]
+
+library(reshape2)
+hypdata1_long=reshape2::melt(hypdata1,c("State.Code" ,"Region","Cost_Index"))
+# you get:
+head(hypdata1_long,20)
+names(hypdata1_long)[c(1,4,5)]=c("State_Code","race","all_race_value")
+
+library(ggplot2)
+base=ggplot(data=hypdata1_long)#, mapping=aes(color=race))
+plot1=base + geom_point(aes(x=Cost_Index, y=all_race_value))
+plot1
+
+library(magrittr)
+plot1a=hypdata1_long%>%ggplot(aes(x=Cost_Index,y=all_race_value,
+                           color=Cost_Index))+
+  geom_point(shape=19,size=2.5)+#theme_bw()
+  scale_color_gradient(low="black", high="red")
+plot2a=plot1a + facet_grid(Region~race)
+
+library(scales)
+plot3a=plot2a+scale_y_continuous(labels = label_number(suffix = "M", scale = 1e-6)) 
+
+library(ggrepel)
+plot4a=plot3a+geom_text_repel(aes(label=ifelse(all_race_value>500000,State_Code, "")), size=2, 
+                       min.segment.length = 0,
+                       max.overlaps = 100)
+
+titleText='Racial/Ethnic population greater than 500K & Cost Index by State'
+sourceText='Source: World Population Review (2020)'
+
+plot5a=plot4a+labs(title = titleText,
+            x=NULL,
+            y=NULL,
+            caption=sourceText)
+hypData=hypData=plot5a
+hypData
+```
+SAVE AS RDS
+```{r}
+write.csv(hypData,"hypData.csv")
+saveRDS(hypData, file = "hypData.rds")
+```
