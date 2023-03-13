@@ -9,8 +9,9 @@ output:
 ```{r setup, include=FALSE}
 library(flexdashboard)
 ```
-Column {.tabset}
------------------------------------------------------------------------
+
+## Column {.tabset}
+
 ### U.S. States with Racial and Ethnic Population Greater than 500K
 
 ```{r, fig.width=8, fig.height=5}
